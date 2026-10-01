@@ -4,9 +4,9 @@ local debugMode = Config.Debug or false
 local function setVisible(state, data)
     open = state
     SetNuiFocus(state, state)
-    SendNUIMessage({ 
-        action = state and 'open' or 'close', 
-        data = data 
+    SendNUIMessage({
+        action = state and 'open' or 'close',
+        data = data
     })
 end
 
@@ -24,6 +24,10 @@ RegisterNetEvent('inv_nopixel:open', function(data)
     setVisible(true, data)
 end)
 
+RegisterNetEvent('inv_nopixel:close', function()
+    setVisible(false)
+end)
+
 RegisterNetEvent('inv_nopixel:itemUsed', function(name, metadata)
     if debugMode then
         TriggerEvent('chat:addMessage', {
@@ -34,21 +38,42 @@ RegisterNetEvent('inv_nopixel:itemUsed', function(name, metadata)
     end
 end)
 
-RegisterNUICallback('close', function(_, cb)
+RegisterNUICallback('close', function(data, cb)
     setVisible(false)
     cb({ ok = true })
 end)
 
 RegisterNUICallback('use', function(data, cb)
-    if data and data.slot then
-        TriggerServerEvent('inv_nopixel:useItem', data.slot)
+    if data and data.name then
+        TriggerServerEvent('inv_nopixel:useItem', data.name)
     end
     cb({ ok = true })
 end)
 
-RegisterNUICallback('discard', function(data, cb)
+RegisterNUICallback('drop', function(data, cb)
     if data and data.name then
-        TriggerServerEvent('inv_nopixel:removeItem', data.name, data.amount or 1, data.metadata)
+        TriggerServerEvent('inv_nopixel:dropItem', data.name, data.amount or 1, data.metadata)
+    end
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('give', function(data, cb)
+    if data and data.name then
+        TriggerServerEvent('inv_nopixel:giveItem', data.name, data.amount or 1)
+    end
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('reorder', function(data, cb)
+    if data then
+        TriggerServerEvent('inv_nopixel:reorderItems', data.inventory, data.fromSlot, data.toSlot)
+    end
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('transfer', function(data, cb)
+    if data then
+        TriggerServerEvent('inv_nopixel:transferItem', data.fromInventory, data.toInventory, data.itemName, data.amount, data.metadata)
     end
     cb({ ok = true })
 end)
@@ -61,6 +86,11 @@ exports('closeInventory', function()
     if open then
         setVisible(false)
     end
+end)
+
+-- Hotkeys
+RegisterNetEvent('inv_nopixel:useHotbarItem', function(slot)
+    TriggerServerEvent('inv_nopixel:useItem', nil)
 end)
 
 if debugMode then
